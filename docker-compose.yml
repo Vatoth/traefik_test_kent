@@ -1,0 +1,49 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:12.0-alpine
+    ports: 
+      - 5432:5432
+    restart: on-failure
+  back:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - static:/static:rw
+    depends_on:
+      - db
+    restart: on-failure
+    deploy:
+      replicas: 5
+    healthcheck:
+      test: curl http://back.localhost -s -f -o /dev/null || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.back.rule=Host(`back.localhost`)"
+      - "traefik.http.routers.back.entrypoints=web"
+      - "traefik.frontend.rule=PathPrefixStrip:/"
+      - "traefik.backend.healthcheck.path=/health"
+      - "traefik.backend.healthcheck.interval=10s"
+      - "traefik.backend.healthcheck.timeout=2s"
+  traefik:
+    image: traefik:latest
+    container_name: "traefik"
+    command: 
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Access to Docker
+      # - ./traefik.toml:/traefik.toml              # Traefik configuration
+    ports:
+      - "80:80"
+      - "8080:8080"
+
+volumes:
+  static:
