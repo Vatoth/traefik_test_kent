@@ -1,23 +1,15 @@
 version: '3.7'
 
 services:
-  db:
-    image: postgres:12.0-alpine
-    ports: 
-      - 5432:5432
-    restart: on-failure
   back:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - static:/static:rw
-    depends_on:
-      - db
     restart: on-failure
-    deploy:
-      replicas: 5
     labels:
+      - "traefik.backend=back"
       - "traefik.enable=true"
       - "traefik.http.routers.back.rule=Host(`back.localhost`)"
       - "traefik.http.routers.back.entrypoints=web"
@@ -30,8 +22,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro # Access to Docker
-      # - ./traefik.toml:/traefik.toml              # Traefik configuration
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "80:80"
       - "8080:8080"
