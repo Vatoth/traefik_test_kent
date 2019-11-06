@@ -7,8 +7,6 @@ RUN apk add --no-cache build-base jpeg-dev zlib-dev postgresql-dev curl
 
 RUN pip install --upgrade pip pipenv
 
-#ENTRYPOINT ["tail", "-f", "/dev/null"]
-
 COPY Pipfile* ./
 
 RUN pipenv install --deploy --system
